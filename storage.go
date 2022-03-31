@@ -210,6 +210,7 @@ func NewStorage(opts ...Option) (Storage, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open data directory: %w", err)
 	}
+	//如果没有数据初始化一个空的返回
 	if len(dirs) == 0 {
 		s.newPartition(nil, false)
 		return s, nil
@@ -217,12 +218,14 @@ func NewStorage(opts ...Option) (Storage, error) {
 	isPartitionDir := func(f fs.DirEntry) bool {
 		return f.IsDir() && partitionDirRegex.MatchString(f.Name())
 	}
+	//创建一个 partition 数组
 	partitions := make([]partition, 0, len(dirs))
 	for _, e := range dirs {
 		if !isPartitionDir(e) {
 			continue
 		}
 		path := filepath.Join(s.dataPath, e.Name())
+		//执行加载Partition
 		part, err := openDiskPartition(path, s.retention)
 		if errors.Is(err, ErrNoDataPoints) {
 			continue
@@ -234,11 +237,13 @@ func NewStorage(opts ...Option) (Storage, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed to open disk partition for %s: %w", path, err)
 		}
+		//创建好的partition对象加入到partitions
 		partitions = append(partitions, part)
 	}
 	sort.Slice(partitions, func(i, j int) bool {
 		return partitions[i].minTimestamp() < partitions[j].minTimestamp()
 	})
+	//把 partition 加入到 partitionList 中
 	for _, p := range partitions {
 		s.newPartition(p, false)
 	}
@@ -295,6 +300,7 @@ func (s *storage) InsertRows(rows []Row) error {
 		if err := s.ensureActiveHead(); err != nil {
 			return err
 		}
+		//初始化
 		iterator := s.partitionList.newIterator()
 		n := s.partitionList.size()
 		rowsToInsert := rows

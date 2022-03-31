@@ -89,8 +89,11 @@ func (m *memoryPartition) insertRows(rows []Row) ([]Row, error) {
 		if row.Timestamp > maxTimestamp {
 			maxTimestamp = row.Timestamp
 		}
+		//标准化 metric name
 		name := marshalMetricName(row.Metric, row.Labels)
+		//从map中得到 memoryMetric
 		mt := m.getMetric(name)
+		//插入数据点
 		mt.insertPoint(&row.DataPoint)
 		rowsNum++
 	}
